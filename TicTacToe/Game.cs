@@ -7,16 +7,22 @@ namespace TicTacToe
     class Game
     {
         private Grid grid;
+        public int WinnLineLength { get; private set; }
         public Player[] Players { get; private set; }
         public Player CurrentPlayer { get; private set; }
         private int currentPlayerIndex = 0;
 
-        public Game(int width, int height, Player[] players, byte defaultFieldValue = default(byte))
+        public delegate void DetectedWinnerHandler(Game sender, Player winner, int[] winningFields);
+
+        public event DetectedWinnerHandler DetectedWinner;
+
+        public Game(int width, int height, int winnLineLength,Player[] players, byte defaultFieldValue = default(byte))
         {
             grid = new Grid(width, height, defaultFieldValue);
+            WinnLineLength = winnLineLength;
             Players = players;
             grid.FieldChangedEvent += GridChanged;
-            grid.FieldChangedEvent += GridChangedDebug;
+            //grid.FieldChangedEvent += GridChangedDebug;
         }
 
         private void GridChangedDebug(Grid senderGrid, int fieldIndex)
@@ -38,24 +44,49 @@ namespace TicTacToe
         
         private void GridChanged(Grid senderGrid, int fieldIndex)
         {
+            PrintGrid();
             List<int>[] lanes = senderGrid.GetAllLanes(fieldIndex);
-            Console.ForegroundColor = ConsoleColor.Green;
+            
             foreach(List<int> lane in lanes)
             {
-                foreach(int item in lane)
+                if (lane.Count < WinnLineLength)
+                    continue;
+                int currenntIndex = 0;
+                int[] winningFields = new int[WinnLineLength];
+                foreach(int gridIndex in lane)
                 {
-                    //
+                    if(winningFields[currenntIndex] == grid[gridIndex] && grid[gridIndex] != grid.DefaultFieldValue)
+                    {
+                        currenntIndex++;
+                        winningFields[currenntIndex] = grid[gridIndex];
+                        if (currenntIndex + 1 >= WinnLineLength)
+                        {
+                            Player winner = Player.GetPlayerByGridId(Players, grid[gridIndex]);
+                            DetectedWinner?.Invoke(this, winner, winningFields);
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        currenntIndex = 0;
+                        winningFields = new int[WinnLineLength];
+                        winningFields[currenntIndex] = grid[gridIndex];
+                    }
                 }
-                Console.WriteLine();
             }
-            Console.ResetColor();
         }
 
+        public void ResetGame()
+        {
+            grid.ClearGrid();
+            currentPlayerIndex = 0;
+        }
+        
         public bool SetField(int fieldIndex)
         {
             CurrentPlayer = Players[currentPlayerIndex];
 
-            if (grid[fieldIndex] != grid.DefaultFieldValue)
+            if (fieldIndex >= grid.GridArray.Length || fieldIndex < 0 || grid[fieldIndex] != grid.DefaultFieldValue)
                 return false;
 
             grid[fieldIndex] = CurrentPlayer.GridId;
@@ -73,6 +104,7 @@ namespace TicTacToe
 
         public void PrintGrid()
         {
+            Console.Clear();
             int tempLineIndex = 0;
             foreach(byte field in grid.GridArray)
             {

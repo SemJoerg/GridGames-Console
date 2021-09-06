@@ -32,7 +32,7 @@ namespace TicTacToe
 
         public delegate void FieldChangedHandler(Grid senderGrid, int fieldIndex);
 
-        public event FieldChangedHandler FieldChangedEvent;
+        public event FieldChangedHandler FieldChangedEvent; //Event wont be triggered through ClearGrid()
 
         public Grid(int width, int height, byte defaultFieldValue = default(byte))
         {
@@ -47,7 +47,7 @@ namespace TicTacToe
         {
             for(int i = 0; i < GridArray.Length; i++)
             {
-                this[i] = DefaultFieldValue;
+                gridArray[i] = DefaultFieldValue;
             }
         }
 

@@ -18,5 +18,18 @@ namespace TicTacToe
             GridId = gridId;
             Marker = marker;
         }
+
+        static public Player GetPlayerByGridId(Player[] players, int gridId)
+        {
+            foreach(Player player in players)
+            {
+                if(player.GridId == gridId)
+                {
+                    return player;
+                }
+            }
+
+            return new Player();
+        }
     }
 }
