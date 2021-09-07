@@ -6,6 +6,7 @@ namespace TicTacToe
 {
     struct Player
     {
+        public readonly bool emptyPlayer;
         public int Winns { get; set; }
         public string Name { get; set; }
         public byte GridId { get; set; }
@@ -13,9 +14,19 @@ namespace TicTacToe
 
         public Player(string name, byte gridId, char marker)
         {
+            emptyPlayer = false;
             Winns = 0;
             Name = name;
             GridId = gridId;
+            Marker = marker;
+        }
+
+        public Player(int gridId, char marker)
+        {
+            emptyPlayer = true;
+            Winns = 0;
+            Name = null;
+            GridId = 0;
             Marker = marker;
         }
 
@@ -29,7 +40,7 @@ namespace TicTacToe
                 }
             }
 
-            return new Player();
+            return new Player(0, ' ');
         }
     }
 }

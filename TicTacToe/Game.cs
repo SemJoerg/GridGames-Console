@@ -7,21 +7,32 @@ namespace TicTacToe
     class Game
     {
         private Grid grid;
+        public int GridWidth { get; private set; }
+        public int GridHeight { get; private set; }
         public int WinnLineLength { get; private set; }
         public Player[] Players { get; private set; }
         public Player CurrentPlayer { get; private set; }
-        private int currentPlayerIndex = 0;
+        private int currentPlayerIndex = 1;
 
+        public delegate void OutputGrid(char[] markerGrid, int gridWidth, int gridHeight, int? changedFieldIndex = null, char? changedFieldMarker = null);
+        private OutputGrid outputGrid;
         public delegate void DetectedWinnerHandler(Game sender, Player winner, int[] winningFields);
-
         public event DetectedWinnerHandler DetectedWinner;
 
-        public Game(int width, int height, int winnLineLength,Player[] players, byte defaultFieldValue = default(byte))
+        public Game(int width, int height, int winnLineLength,Player[] players, Player emptyPlayer, OutputGrid _outputGrid)
         {
-            grid = new Grid(width, height, defaultFieldValue);
+            grid = new Grid(width, height, emptyPlayer.GridId);
+            GridWidth = width;
+            GridHeight = height;
             WinnLineLength = winnLineLength;
-            Players = players;
-            grid.FieldChangedEvent += GridChanged;
+            Players = new Player[players.Length + 1];
+            Players[0] = emptyPlayer;
+            for(int i = 1; i < Players.Length; i++)
+            {
+                Players[i] = players[i - 1];
+            }
+            outputGrid = _outputGrid;
+            grid.FieldChangedEvent += GridFieldChanged;
             //grid.FieldChangedEvent += GridChangedDebug;
         }
 
@@ -42,9 +53,9 @@ namespace TicTacToe
             Console.ResetColor();
         }
         
-        private void GridChanged(Grid senderGrid, int fieldIndex)
+        private void GridFieldChanged(Grid senderGrid, int fieldIndex)
         {
-            PrintGrid();
+            DoGridOutput(fieldIndex);
             List<int>[] lanes = senderGrid.GetAllLanes(fieldIndex);
             
             foreach(List<int> lane in lanes)
@@ -76,15 +87,38 @@ namespace TicTacToe
             }
         }
 
+        private char[] GetConvertedGridArray()
+        {
+            char[] convertedGridArray = new char[grid.GridArray.Length];
+            for(int i = 0; i < grid.GridArray.Length; i++)
+            {
+                convertedGridArray[i] = Player.GetPlayerByGridId(Players, grid.GridArray[i]).Marker;
+            }
+            return convertedGridArray;
+        }
+
+        public void DoGridOutput(int? changedFieldIndex = null)
+        {
+            char? changedFieldMarker = null;
+            if(changedFieldIndex != null)
+            {
+                changedFieldMarker = Player.GetPlayerByGridId(Players, changedFieldIndex ?? Players[0].GridId).Marker;
+            }
+
+            outputGrid(GetConvertedGridArray(), grid.Width, grid.Height, changedFieldIndex, changedFieldMarker);
+        }
+
         public void ResetGame()
         {
             grid.ClearGrid();
             currentPlayerIndex = 0;
+            DoGridOutput();
         }
         
-        public bool SetField(int fieldIndex)
+        public bool SetNextField(int fieldIndex)
         {
             CurrentPlayer = Players[currentPlayerIndex];
+
 
             if (fieldIndex >= grid.GridArray.Length || fieldIndex < 0 || grid[fieldIndex] != grid.DefaultFieldValue)
                 return false;
@@ -93,7 +127,7 @@ namespace TicTacToe
 
             if(currentPlayerIndex >= Players.Length - 1)
             {
-                currentPlayerIndex = 0;
+                currentPlayerIndex = 1;
             }
             else
             {
@@ -102,24 +136,6 @@ namespace TicTacToe
             return true;
         }
 
-        public void PrintGrid()
-        {
-            Console.Clear();
-            int tempLineIndex = 0;
-            foreach(byte field in grid.GridArray)
-            {
-                Console.Write(field);
-                tempLineIndex++;
-                if(tempLineIndex >= grid.Width)
-                {
-                    Console.WriteLine();
-                    tempLineIndex = 0;
-                }
-                else
-                {
-                    Console.Write("  ");
-                }
-            }
-        }
+        
     }
 }
