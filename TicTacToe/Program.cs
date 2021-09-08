@@ -124,19 +124,45 @@ namespace TicTacToe
             {
                 try
                 {
-                    Console.Write("Row: ");
-                    char rowChar = Convert.ToChar(Console.ReadLine());
+                    Console.Write("\nFieldAddress: ");
+                    int letterLength = 0;
+                    int rowCharIndex = -1;
+                    int colum = -1;
+                    string rawInput = Console.ReadLine();
+                    for(int i = 0; i < rawInput.Length; i++)
+                    {
+                        if(char.IsLetter(rawInput[i]))
+                        {
+                            if(letterLength == 0)
+                            {
+                                rowCharIndex = i;
+                            }
+                            else if(rawInput[i] != rawInput[rowCharIndex])
+                            {
+                                throw new Exception("Incorrect row letter");
+                            }
+                            letterLength++;
+                        }
+                        else if(rowCharIndex != -1)
+                        {
+                            colum = Convert.ToInt32(rawInput.Substring(rowCharIndex + 1));
+                        }
+                        else
+                        {
+                            throw new Exception("Invalid FieldAddress");
+                        }
+                    }
+                    
                     int row = 0;
                     for(int i = 0; i < lineLetters.Length; i++)
                     {
-                        if(rowChar == lineLetters[i])
+                        if(rawInput[rowCharIndex] == lineLetters[i])
                         {
                             row = i;
                         }
                     }
-                    Console.Write("Colum: ");
-                    int colum= Convert.ToInt32(Console.ReadLine());
-                    return (row * (game.GridWidth)) + colum - 1;
+                    
+                    return (row * letterLength * (game.GridWidth)) + colum - 1;
                 }
                 catch (Exception ex)
                 {
@@ -219,6 +245,7 @@ namespace TicTacToe
                    Console.Write(spaceSpacer);
                 }
             }
+            Console.WriteLine($"\nnext player: {game.NextPlayer.Name} [{game.NextPlayer.Marker}]");
         }
     }
 }

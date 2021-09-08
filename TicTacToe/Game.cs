@@ -12,6 +12,7 @@ namespace TicTacToe
         public int WinnLineLength { get; private set; }
         public Player[] Players { get; private set; }
         public Player CurrentPlayer { get; private set; }
+        public Player NextPlayer { get; private set; }
         private int currentPlayerIndex = 1;
 
         public delegate void OutputGrid(char[] markerGrid, int gridWidth, int gridHeight, int? changedFieldIndex = null, char? changedFieldMarker = null);
@@ -25,12 +26,15 @@ namespace TicTacToe
             GridWidth = width;
             GridHeight = height;
             WinnLineLength = winnLineLength;
+            
             Players = new Player[players.Length + 1];
             Players[0] = emptyPlayer;
             for(int i = 1; i < Players.Length; i++)
             {
                 Players[i] = players[i - 1];
             }
+            NextPlayer = Players[currentPlayerIndex];
+
             outputGrid = _outputGrid;
             grid.FieldChangedEvent += GridFieldChanged;
             //grid.FieldChangedEvent += GridChangedDebug;
@@ -111,7 +115,8 @@ namespace TicTacToe
         public void ResetGame()
         {
             grid.ClearGrid();
-            currentPlayerIndex = 0;
+            currentPlayerIndex = 1;
+            NextPlayer = Players[currentPlayerIndex];
             DoGridOutput();
         }
         
@@ -119,13 +124,11 @@ namespace TicTacToe
         {
             CurrentPlayer = Players[currentPlayerIndex];
 
-
             if (fieldIndex >= grid.GridArray.Length || fieldIndex < 0 || grid[fieldIndex] != grid.DefaultFieldValue)
                 return false;
 
-            grid[fieldIndex] = CurrentPlayer.GridId;
-
-            if(currentPlayerIndex >= Players.Length - 1)
+            //Next Player has to be dertimined that it is updated when the gridChanged Event gets called
+            if (currentPlayerIndex >= Players.Length - 1)
             {
                 currentPlayerIndex = 1;
             }
@@ -133,6 +136,9 @@ namespace TicTacToe
             {
                 currentPlayerIndex++;
             }
+            NextPlayer = Players[currentPlayerIndex];
+
+            grid[fieldIndex] = CurrentPlayer.GridId;
             return true;
         }
 
