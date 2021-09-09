@@ -9,7 +9,6 @@ namespace TicTacToe
         static Game game;
         static void Main(string[] args)
         {
-            //Game game = new Game(10, 10, 3, players, new Player(0, '#'), PrintGrid);
             MainMenu();
             game.DetectedWinner += OnWinnerDetected;
 
@@ -58,7 +57,7 @@ namespace TicTacToe
                                 Console.WriteLine("You have to set a winn line length");
                             else
                             {
-                                game = new Game(gridWidth, gridHeight, winnLineLength, players.ToArray(), new Player(0, '#'), PrintGrid);
+                                game = new Game(gridWidth, gridHeight, winnLineLength, players.ToArray(), new Player(0, '#'), PrintGrid, OnGridIsFull);
                                 exitMainMenue = true;
                             }
                             Console.ResetColor();
@@ -145,7 +144,7 @@ namespace TicTacToe
                         }
                         else if(rowCharIndex != -1)
                         {
-                            colum = Convert.ToInt32(rawInput.Substring(rowCharIndex + 1));
+                            colum = Convert.ToInt32(rawInput.Substring(rowCharIndex + letterLength));
                         }
                         else
                         {
@@ -156,18 +155,21 @@ namespace TicTacToe
                     int row = 0;
                     for(int i = 0; i < lineLetters.Length; i++)
                     {
-                        if(rawInput[rowCharIndex] == lineLetters[i])
+                        if(rawInput.ToUpper()[rowCharIndex] == lineLetters[i])
                         {
                             row = i;
                         }
                     }
-                    
-                    return (row * letterLength * (game.GridWidth)) + colum - 1;
+
+                    if (letterLength > 1)
+                        row += lineLetters.Length * (letterLength - 1);
+
+                    return (row * game.GridWidth) + colum - 1;
                 }
                 catch (Exception ex)
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine(ex.Message);
+                    Console.WriteLine(ex);
                     Console.ResetColor();
                 }
             }
@@ -184,6 +186,17 @@ namespace TicTacToe
             sender.ResetGame();
         }
 
+        static void OnGridIsFull(Grid sender)
+        {
+            Console.ForegroundColor = ConsoleColor.DarkBlue;
+            Console.WriteLine($"Tie");
+            Console.WriteLine("Press any Key to continue...");
+            Console.ResetColor();
+            Console.ReadKey();
+            Console.Clear();
+            game.ResetGame();
+        }
+
         static void PrintGrid(char[] markerGrid, int gridWidth, int gridHeight, int? changedFieldIndex = null, char? changedFieldMarker = null)
         {
             Console.Clear();
@@ -198,7 +211,7 @@ namespace TicTacToe
             int tempLineLengthIndex = 0;
             int lineIndex = 0;
             int charAmmount = 1;
-            Console.Write("    ");
+            Console.Write("     ");
             for(int i = 1; i <= gridWidth; i++)
             {
                 string numberSpacer = "";

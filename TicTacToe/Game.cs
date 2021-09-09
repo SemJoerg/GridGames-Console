@@ -20,7 +20,7 @@ namespace TicTacToe
         public delegate void DetectedWinnerHandler(Game sender, Player winner, int[] winningFields);
         public event DetectedWinnerHandler DetectedWinner;
 
-        public Game(int width, int height, int winnLineLength,Player[] players, Player emptyPlayer, OutputGrid _outputGrid)
+        public Game(int width, int height, int winnLineLength,Player[] players, Player emptyPlayer, OutputGrid _outputGrid, Grid.GridIsFullHandler gridIsFull)
         {
             grid = new Grid(width, height, emptyPlayer.GridId);
             GridWidth = width;
@@ -38,6 +38,7 @@ namespace TicTacToe
             outputGrid = _outputGrid;
             grid.FieldChangedEvent += GridFieldChanged;
             //grid.FieldChangedEvent += GridChangedDebug;
+            grid.GridIsFullEvent += gridIsFull;
         }
 
         private void GridChangedDebug(Grid senderGrid, int fieldIndex)
@@ -68,15 +69,16 @@ namespace TicTacToe
                     continue;
                 int currenntIndex = 0;
                 int[] winningFields = new int[WinnLineLength];
+                Player winner;
                 foreach(int gridIndex in lane)
                 {
-                    if(winningFields[currenntIndex] == grid[gridIndex] && grid[gridIndex] != grid.DefaultFieldValue)
+                    winner = Player.GetPlayerByGridId(Players, grid[gridIndex]);
+                    if (winningFields[currenntIndex] == grid[gridIndex] && grid[gridIndex] != grid.DefaultFieldValue)
                     {
                         currenntIndex++;
                         winningFields[currenntIndex] = grid[gridIndex];
                         if (currenntIndex + 1 >= WinnLineLength)
                         {
-                            Player winner = Player.GetPlayerByGridId(Players, grid[gridIndex]);
                             DetectedWinner?.Invoke(this, winner, winningFields);
                             break;
                         }
@@ -86,6 +88,12 @@ namespace TicTacToe
                         currenntIndex = 0;
                         winningFields = new int[WinnLineLength];
                         winningFields[currenntIndex] = grid[gridIndex];
+
+                        if (winningFields[currenntIndex] != grid.DefaultFieldValue && currenntIndex + 1 >= WinnLineLength)
+                        {
+                            DetectedWinner?.Invoke(this, winner, winningFields);
+                            break;
+                        }
                     }
                 }
             }

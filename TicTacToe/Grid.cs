@@ -27,12 +27,21 @@ namespace TicTacToe
             {
                 gridArray[index] = value;
                 FieldChangedEvent?.Invoke(this, index);
+                foreach (byte item in gridArray)
+                {
+                    if (item == DefaultFieldValue)
+                        return;
+                }
+
+                GridIsFullEvent?.Invoke(this);
             }
         }
 
         public delegate void FieldChangedHandler(Grid senderGrid, int fieldIndex);
+        public delegate void GridIsFullHandler(Grid senderGrid);
 
         public event FieldChangedHandler FieldChangedEvent; //Event wont be triggered through ClearGrid()
+        public event GridIsFullHandler GridIsFullEvent;
 
         public Grid(int width, int height, byte defaultFieldValue = default(byte))
         {
