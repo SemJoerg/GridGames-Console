@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace TicTacToe
+namespace GridGamesConsole
 {
     class Program
     {
         static char[] lineLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".ToCharArray();
-        static Game game;
+        static Game game;//game gets initialized in MainMenu()
         static void Main(string[] args)
         {
             MainMenu();
@@ -43,7 +43,7 @@ namespace TicTacToe
                     Console.WriteLine("[2] Set winn line length");
                     Console.WriteLine("[3] Set gridsize");
                     Console.WriteLine("[4] Add player");
-                    Console.WriteLine("[5] Remove all Players");
+                    Console.WriteLine("[5] Remove all players");
                     input = Convert.ToInt32(Console.ReadLine());
                     switch (input)
                     {
@@ -71,7 +71,7 @@ namespace TicTacToe
                             gridWidth = Convert.ToInt32(Console.ReadLine());
                             Console.Write("\nGridHeight: ");
                             gridHeight = Convert.ToInt32(Console.ReadLine());
-                            if (gridHeight > 30 || gridWidth > 30)
+                            if (gridHeight > 30 || gridHeight < -30 || gridWidth > 30 || gridWidth < -30)
                             {
                                 gridWidth = 0;
                                 gridHeight = 0;
@@ -109,7 +109,7 @@ namespace TicTacToe
                 catch (Exception ex)
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine(ex.Message);
+                    Console.WriteLine(ex);
                     Console.ResetColor();
                 }
                 Console.WriteLine("Press any Key to continue...");
@@ -189,7 +189,7 @@ namespace TicTacToe
         static void OnGridIsFull(Grid sender)
         {
             Console.ForegroundColor = ConsoleColor.DarkBlue;
-            Console.WriteLine($"Tie");
+            Console.WriteLine($"Nobody wonn it is a tie!!!");
             Console.WriteLine("Press any Key to continue...");
             Console.ResetColor();
             Console.ReadKey();

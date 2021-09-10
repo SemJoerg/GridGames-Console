@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace TicTacToe
+namespace GridGamesConsole
 {
     public class Grid
     {
-        public int Width { get; private set; }
-        public int Height { get; private set; }
+        private int width;
+        public int Width { get { return width; } private set { width = GetPositiveNumber(value); } }
+        private int height;
+        public int Height { get { return height; } private set { height = GetPositiveNumber(value); } }
         public byte DefaultFieldValue { get; private set; }
         private byte[] gridArray;
         public byte[] GridArray
@@ -39,6 +41,7 @@ namespace TicTacToe
 
         public delegate void FieldChangedHandler(Grid senderGrid, int fieldIndex);
         public delegate void GridIsFullHandler(Grid senderGrid);
+        public delegate int? GetField(int fieldIndex);
 
         public event FieldChangedHandler FieldChangedEvent; //Event wont be triggered through ClearGrid()
         public event GridIsFullHandler GridIsFullEvent;
@@ -50,6 +53,19 @@ namespace TicTacToe
             DefaultFieldValue = defaultFieldValue;
             GridArray = new byte[width * height];
             ClearGrid();
+        }
+
+        private int GetPositiveNumber(int value)
+        {
+            if(value < 0)
+            {
+                return -value;
+            }
+            if(value == 0)
+            {
+                return 1;
+            }
+            return value;
         }
 
         public void ClearGrid()
@@ -124,59 +140,39 @@ namespace TicTacToe
             return null;
         }
 
-        public int? GetUpperLeftField(int fieldIndex)
+        private int? GetCombindedField(int fieldIndex, GetField firstField, GetField secondField)
         {
-            int? firstField = GetUpperField(fieldIndex);
-            int? secondField = null;
-            if (firstField != null)
-                secondField = GetLeftField(firstField ?? default(int));
+            int? firstFieldIndex = firstField(fieldIndex);
+            int? secondFieldIndex = null;
+            if (firstFieldIndex != null)
+                secondFieldIndex = secondField(firstFieldIndex ?? default(int));
 
-            if (secondField != null)
-                return secondField;
+            if (secondFieldIndex != null)
+                return secondFieldIndex;
 
             return null;
+        }
+
+        public int? GetUpperLeftField(int fieldIndex)
+        {
+            return GetCombindedField(fieldIndex, GetUpperField, GetLeftField);
         }
 
         public int? GetUpperRightField(int fieldIndex)
         {
-            int? firstField = GetUpperField(fieldIndex);
-            int? secondField = null;
-            if (firstField != null)
-                secondField = GetRightField(firstField ?? default(int));
-
-            if (secondField != null)
-                return secondField;
-
-            return null;
+            return GetCombindedField(fieldIndex, GetUpperField, GetRightField);
         }
 
         public int? GetLowerLeftField(int fieldIndex)
         {
-            int? firstField = GetLowerField(fieldIndex);
-            int? secondField = null;
-            if (firstField != null)
-                secondField = GetLeftField(firstField ?? default(int));
-
-            if (secondField != null)
-                return secondField;
-
-            return null;
+            return GetCombindedField(fieldIndex, GetLowerField, GetLeftField);
         }
 
         public int? GetLowerRightField(int fieldIndex)
         {
-            int? firstField = GetLowerField(fieldIndex);
-            int? secondField = null;
-            if (firstField != null)
-                secondField = GetRightField(firstField ?? default(int));
-
-            if (secondField != null)
-                return secondField;
-
-            return null;
+            return GetCombindedField(fieldIndex, GetLowerField, GetRightField);
         }
-
-        public delegate int? GetField(int fieldIndex);
+        
 
         public List<int> GetLine(int fieldIndex, GetField firstField, GetField secondField)
         {

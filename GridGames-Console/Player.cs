@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace TicTacToe
+namespace GridGamesConsole
 {
     struct Player
     {

@@ -2,14 +2,29 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace TicTacToe
+namespace GridGamesConsole
 {
     class Game
     {
         private Grid grid;
-        public int GridWidth { get; private set; }
-        public int GridHeight { get; private set; }
-        public int WinnLineLength { get; private set; }
+        public int GridWidth { get { return grid.Width; } }
+        public int GridHeight { get { return grid.Height; } }
+        private int winnLineLength;
+        public int WinnLineLength 
+        {
+            get { return winnLineLength; }
+            set
+            {
+                if(value < 1)
+                {
+                    winnLineLength = 1;
+                }
+                else
+                {
+                    winnLineLength = value;
+                }
+            }
+        }
         public Player[] Players { get; private set; }
         public Player CurrentPlayer { get; private set; }
         public Player NextPlayer { get; private set; }
@@ -20,12 +35,10 @@ namespace TicTacToe
         public delegate void DetectedWinnerHandler(Game sender, Player winner, int[] winningFields);
         public event DetectedWinnerHandler DetectedWinner;
 
-        public Game(int width, int height, int winnLineLength,Player[] players, Player emptyPlayer, OutputGrid _outputGrid, Grid.GridIsFullHandler gridIsFull)
+        public Game(int width, int height, int _winnLineLength, Player[] players, Player emptyPlayer, OutputGrid _outputGrid, Grid.GridIsFullHandler gridIsFull)
         {
             grid = new Grid(width, height, emptyPlayer.GridId);
-            GridWidth = width;
-            GridHeight = height;
-            WinnLineLength = winnLineLength;
+            WinnLineLength = _winnLineLength;
             
             Players = new Player[players.Length + 1];
             Players[0] = emptyPlayer;
@@ -36,8 +49,8 @@ namespace TicTacToe
             NextPlayer = Players[currentPlayerIndex];
 
             outputGrid = _outputGrid;
+            grid.FieldChangedEvent += GridChangedDebug;
             grid.FieldChangedEvent += GridFieldChanged;
-            //grid.FieldChangedEvent += GridChangedDebug;
             grid.GridIsFullEvent += gridIsFull;
         }
 
@@ -56,6 +69,7 @@ namespace TicTacToe
                 Console.WriteLine();
             }
             Console.ResetColor();
+            Console.ReadKey();
         }
         
         private void GridFieldChanged(Grid senderGrid, int fieldIndex)
@@ -149,7 +163,6 @@ namespace TicTacToe
             grid[fieldIndex] = CurrentPlayer.GridId;
             return true;
         }
-
         
     }
 }
