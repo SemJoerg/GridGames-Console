@@ -6,11 +6,15 @@ namespace GridGamesConsole
 {
     public class Grid
     {
-        private int width;
-        public int Width { get { return width; } private set { width = GetPositiveNumber(value); } }
-        private int height;
-        public int Height { get { return height; } private set { height = GetPositiveNumber(value); } }
+        private uint maxGridLength = 200;
+
+        private uint width;
+        public uint Width { get { return width; } private set { width = Math.Clamp(value, 1, maxGridLength); } }
+        private uint height;
+        public uint Height { get { return height; } private set { height = Math.Clamp(value, 1, maxGridLength); } }
+
         public byte DefaultFieldValue { get; private set; }
+
         private byte[] gridArray;
         public byte[] GridArray
         {
@@ -18,7 +22,7 @@ namespace GridGamesConsole
             private set { gridArray = value; }
         }
 
-        public byte this[int index]
+        public byte this[uint index]
         {
             get
             {
@@ -39,14 +43,17 @@ namespace GridGamesConsole
             }
         }
 
-        public delegate void FieldChangedHandler(Grid senderGrid, int fieldIndex);
+        //delegates
+        public delegate void FieldChangedHandler(Grid senderGrid, uint fieldIndex);
         public delegate void GridIsFullHandler(Grid senderGrid);
-        public delegate int? GetField(int fieldIndex);
+        public delegate uint? GetField(uint fieldIndex);
 
+        //events
         public event FieldChangedHandler FieldChangedEvent; //Event wont be triggered through ClearGrid()
-        public event GridIsFullHandler GridIsFullEvent;
+        public event GridIsFullHandler GridIsFullEvent; //Event is triggered when the field does not contain any defaultFieldValues
 
-        public Grid(int width, int height, byte defaultFieldValue = default(byte))
+        //Constructor
+        public Grid(uint width, uint height, byte defaultFieldValue = default(byte))
         {
             Width = width;
             Height = height;
@@ -55,19 +62,7 @@ namespace GridGamesConsole
             ClearGrid();
         }
 
-        private int GetPositiveNumber(int value)
-        {
-            if(value < 0)
-            {
-                return -value;
-            }
-            if(value == 0)
-            {
-                return 1;
-            }
-            return value;
-        }
-
+        //Writes the whole Grid to the defaultFieldValue
         public void ClearGrid()
         {
             for(int i = 0; i < GridArray.Length; i++)
@@ -76,9 +71,10 @@ namespace GridGamesConsole
             }
         }
 
-        public int? GetUpperField(int fieldIndex)
+        //Methods return the fieldIndex beside the given input Index
+        public uint? GetUpperField(uint fieldIndex)
         {
-            int newIndex = fieldIndex - Width;
+            uint newIndex = fieldIndex - Width;
             if(newIndex < GridArray.Length && newIndex >= 0)
             {
                 return newIndex;
@@ -86,9 +82,9 @@ namespace GridGamesConsole
             return null;
         }
         
-        public int? GetLowerField(int fieldIndex)
+        public uint? GetLowerField(uint fieldIndex)
         {
-            int newIndex = fieldIndex + Width;
+            uint newIndex = fieldIndex + Width;
             if(newIndex < GridArray.Length && newIndex >= 0)
             {
                 return newIndex;
@@ -96,12 +92,12 @@ namespace GridGamesConsole
             return null;
         }
 
-        public int? GetLeftField(int fieldIndex)
+        public uint? GetLeftField(uint fieldIndex)
         {
-            int newIndex = fieldIndex - 1;
+            long newIndex = fieldIndex - 1;
             if (newIndex < GridArray.Length && newIndex >= 0)
             {
-                int tempIndex = Width - 1;
+                long tempIndex = Width - 1;
                 while (true)
                 {
                     if (fieldIndex <= tempIndex)
@@ -112,18 +108,18 @@ namespace GridGamesConsole
                 }
                 if(newIndex > tempIndex - Width && newIndex <= tempIndex)
                 {
-                    return newIndex;
+                    return (uint)newIndex;
                 }
             }
             return null;
         }
 
-        public int? GetRightField(int fieldIndex)
+        public uint? GetRightField(uint fieldIndex)
         {
-            int newIndex = fieldIndex + 1;
+            long newIndex = fieldIndex + 1;
             if (newIndex < GridArray.Length && newIndex >= 0)
             {
-                int tempIndex = Width - 1;
+                long tempIndex = Width - 1;
                 while (true)
                 {
                     if (fieldIndex <= tempIndex)
@@ -134,16 +130,16 @@ namespace GridGamesConsole
                 }
                 if (newIndex >= tempIndex - Width && newIndex <= tempIndex)
                 {
-                    return newIndex;
+                    return (uint)newIndex;
                 }
             }
             return null;
         }
 
-        private int? GetCombindedField(int fieldIndex, GetField firstField, GetField secondField)
+        private uint? GetCombinedField(uint fieldIndex, GetField firstField, GetField secondField)
         {
-            int? firstFieldIndex = firstField(fieldIndex);
-            int? secondFieldIndex = null;
+            uint? firstFieldIndex = firstField(fieldIndex);
+            uint? secondFieldIndex = null;
             if (firstFieldIndex != null)
                 secondFieldIndex = secondField(firstFieldIndex ?? default(int));
 
@@ -153,32 +149,32 @@ namespace GridGamesConsole
             return null;
         }
 
-        public int? GetUpperLeftField(int fieldIndex)
+        public uint? GetUpperLeftField(uint fieldIndex)
         {
-            return GetCombindedField(fieldIndex, GetUpperField, GetLeftField);
+            return GetCombinedField(fieldIndex, GetUpperField, GetLeftField);
         }
 
-        public int? GetUpperRightField(int fieldIndex)
+        public uint? GetUpperRightField(uint fieldIndex)
         {
-            return GetCombindedField(fieldIndex, GetUpperField, GetRightField);
+            return GetCombinedField(fieldIndex, GetUpperField, GetRightField);
         }
 
-        public int? GetLowerLeftField(int fieldIndex)
+        public uint? GetLowerLeftField(uint fieldIndex)
         {
-            return GetCombindedField(fieldIndex, GetLowerField, GetLeftField);
+            return GetCombinedField(fieldIndex, GetLowerField, GetLeftField);
         }
 
-        public int? GetLowerRightField(int fieldIndex)
+        public uint? GetLowerRightField(uint fieldIndex)
         {
-            return GetCombindedField(fieldIndex, GetLowerField, GetRightField);
+            return GetCombinedField(fieldIndex, GetLowerField, GetRightField);
         }
         
-
-        public List<int> GetLine(int fieldIndex, GetField firstField, GetField secondField)
+        //Creates a sorted list(with the indexes of the line) starting from the firstFieldDirection to the secondFieldDirection
+        public List<uint> GetLine(uint fieldIndex, GetField firstField, GetField secondField)
         {
-            int? tempFieldIndex = fieldIndex;
-            int movingIndex = fieldIndex;
-            List<int> lane = new List<int>();
+            uint? tempFieldIndex = fieldIndex;
+            uint movingIndex = fieldIndex;
+            List<uint> lane = new List<uint>();
             while(true)
             {
                 tempFieldIndex = firstField(movingIndex);
@@ -201,9 +197,10 @@ namespace GridGamesConsole
             return lane;
         }
 
-        public List<int>[] GetAllLanes(int fieldIndex)
+        //returns all possible lines from a given fieldIndex
+        public List<uint>[] GetAllLanes(uint fieldIndex)
         {
-            List<int>[] lanes = new List<int>[4];
+            List<uint>[] lanes = new List<uint>[4];
 
             lanes[0] = GetLine(fieldIndex, GetLeftField, GetRightField);
             lanes[1] = GetLine(fieldIndex, GetUpperField, GetLowerField);

@@ -6,7 +6,7 @@ namespace GridGamesConsole
     class Program
     {
         static char[] lineLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".ToCharArray();
-        static Game game;//game gets initialized in MainMenu()
+        static Game<char> game;//game gets initialized in MainMenu()
         static void Main(string[] args)
         {
             MainMenu();
@@ -29,10 +29,10 @@ namespace GridGamesConsole
         static void MainMenu()
         {
             int input = -1;
-            List<Player> players = new List<Player>();
-            int winnLineLength = 0;
-            int gridWidth = 0;
-            int gridHeight = 0;
+            List<Player<char>> players = new List<Player<char>>();
+            uint winnLineLength = 0;
+            uint gridWidth = 0;
+            uint gridHeight = 0;
             bool exitMainMenue = false;
             while (exitMainMenue == false)
             {
@@ -57,20 +57,20 @@ namespace GridGamesConsole
                                 Console.WriteLine("You have to set a winn line length");
                             else
                             {
-                                game = new Game(gridWidth, gridHeight, winnLineLength, players.ToArray(), new Player(0, '#'), PrintGrid, OnGridIsFull);
+                                game = new Game<char>(gridWidth, gridHeight, winnLineLength, players.ToArray(), new Player<char>(0, '#'), PrintGrid, OnGridIsFull);
                                 exitMainMenue = true;
                             }
                             Console.ResetColor();
                             break;
                         case 2:
                             Console.Write("\nWinnLineLength: ");
-                            winnLineLength = Convert.ToInt32(Console.ReadLine());
+                            winnLineLength = Convert.ToUInt32(Console.ReadLine());
                             break;
                         case 3:
                             Console.Write("\nGridWidth: ");
-                            gridWidth = Convert.ToInt32(Console.ReadLine());
+                            gridWidth = Convert.ToUInt32(Console.ReadLine());
                             Console.Write("\nGridHeight: ");
-                            gridHeight = Convert.ToInt32(Console.ReadLine());
+                            gridHeight = Convert.ToUInt32(Console.ReadLine());
                             if (gridHeight > 30 || gridHeight < -30 || gridWidth > 30 || gridWidth < -30)
                             {
                                 gridWidth = 0;
@@ -93,7 +93,7 @@ namespace GridGamesConsole
                             Console.Write("\nMarker: ");
                             char marker = Convert.ToChar(Console.ReadLine());
                             byte playerGridId = (byte)(players.Count + 1);
-                            players.Add(new Player(name, playerGridId, marker));
+                            players.Add(new Player<char>(name, playerGridId, marker));
                             break;
                         case 5:
                             players.Clear();
@@ -109,7 +109,7 @@ namespace GridGamesConsole
                 catch (Exception ex)
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine(ex);
+                    Console.WriteLine(ex.Message);
                     Console.ResetColor();
                 }
                 Console.WriteLine("Press any Key to continue...");
@@ -117,42 +117,47 @@ namespace GridGamesConsole
             }
         }
 
-        static int GetIntInput()
+        static uint GetIntInput()
         {
             while (true)
             {
                 try
                 {
                     Console.Write("\nFieldAddress: ");
-                    int letterLength = 0;
-                    int rowCharIndex = -1;
+                    int letterLength = 0; //Amount of same letters chained together (example: A = 1, AA = 2, AAA = 3)
+                    int rowCharIndex = -1; //The index in the lineLetter array
+                    int row = 0;
                     int colum = -1;
                     string rawInput = Console.ReadLine();
+
                     for(int i = 0; i < rawInput.Length; i++)
                     {
-                        if(char.IsLetter(rawInput[i]))
+                        //Get rowCharIndex
+                        if (char.IsLetter(rawInput[i]))
                         {
                             if(letterLength == 0)
                             {
                                 rowCharIndex = i;
                             }
-                            else if(rawInput[i] != rawInput[rowCharIndex])
+                            //throws an exception if the chained Letters are not equal
+                            else if (rawInput[i] != rawInput[rowCharIndex])
                             {
                                 throw new Exception("Incorrect row letter");
                             }
                             letterLength++;
                         }
-                        else if(rowCharIndex != -1)
+                        //Get Colum after Row is set
+                        else if (rowCharIndex != -1)
                         {
                             colum = Convert.ToInt32(rawInput.Substring(rowCharIndex + letterLength));
                         }
                         else
                         {
-                            throw new Exception("Invalid FieldAddress");
+                            throw new Exception("Field address has to start with a letter");
                         }
                     }
                     
-                    int row = 0;
+                    //Get Row
                     for(int i = 0; i < lineLetters.Length; i++)
                     {
                         if(rawInput.ToUpper()[rowCharIndex] == lineLetters[i])
@@ -164,18 +169,18 @@ namespace GridGamesConsole
                     if (letterLength > 1)
                         row += lineLetters.Length * (letterLength - 1);
 
-                    return (row * game.GridWidth) + colum - 1;
+                    return (uint)((row * game.GridWidth) + colum - 1);
                 }
                 catch (Exception ex)
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine(ex);
+                    Console.WriteLine(ex.Message);
                     Console.ResetColor();
                 }
             }
         }
 
-        static void OnWinnerDetected(Game sender, Player winner, int[] winningFields)
+        static void OnWinnerDetected(Game<char> sender, Player<char> winner, uint[] winningFields)
         {
             Console.ForegroundColor = ConsoleColor.DarkBlue;
             Console.WriteLine($"{winner.Name} has won!");
@@ -197,7 +202,7 @@ namespace GridGamesConsole
             game.ResetGame();
         }
 
-        static void PrintGrid(char[] markerGrid, int gridWidth, int gridHeight, int? changedFieldIndex = null, char? changedFieldMarker = null)
+        static void PrintGrid(char[] markerGrid, uint gridWidth, uint gridHeight, char changedFieldMarker, uint? changedFieldIndex = null)
         {
             Console.Clear();
             string spaceSpacer = "";

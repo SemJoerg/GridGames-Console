@@ -4,15 +4,15 @@ using System.Text;
 
 namespace GridGamesConsole
 {
-    struct Player
+    struct Player<MarkerType>
     {
         public readonly bool emptyPlayer;
         public int Winns { get; set; }
         public string Name { get; set; }
         public byte GridId { get; set; }
-        public char Marker { get; set; }
+        public MarkerType Marker { get; set; }
 
-        public Player(string name, byte gridId, char marker)
+        public Player(string name, byte gridId, MarkerType marker)
         {
             emptyPlayer = false;
             Winns = 0;
@@ -21,7 +21,17 @@ namespace GridGamesConsole
             Marker = marker;
         }
 
-        public Player(int gridId, char marker)
+        //Creates a emptyPlayer (Is used for the defaultPlayer)
+        public Player(object leaveEmpty = null)
+        {
+            emptyPlayer = true;
+            Winns = 0;
+            Name = null;
+            GridId = 0;
+            Marker = default(MarkerType);
+        }
+
+        public Player(int gridId, MarkerType marker)
         {
             emptyPlayer = true;
             Winns = 0;
@@ -30,9 +40,9 @@ namespace GridGamesConsole
             Marker = marker;
         }
 
-        static public Player GetPlayerByGridId(Player[] players, int gridId)
+        static public Player<MarkerType> GetPlayerByGridId(Player<MarkerType>[] players, uint gridId)
         {
-            foreach(Player player in players)
+            foreach(Player<MarkerType> player in players)
             {
                 if(player.GridId == gridId)
                 {
@@ -40,7 +50,7 @@ namespace GridGamesConsole
                 }
             }
 
-            return new Player(0, ' ');
+            return new Player<MarkerType>(0, default(MarkerType));
         }
     }
 }

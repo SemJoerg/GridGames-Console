@@ -4,18 +4,18 @@ using System.Text;
 
 namespace GridGamesConsole
 {
-    class Game
+    class Game <PlayerMarkerType>
     {
         private Grid grid;
-        public int GridWidth { get { return grid.Width; } }
-        public int GridHeight { get { return grid.Height; } }
-        private int winnLineLength;
-        public int WinnLineLength 
+        public uint GridWidth { get { return grid.Width; } }
+        public uint GridHeight { get { return grid.Height; } }
+        private uint winnLineLength;
+        public uint WinnLineLength 
         {
             get { return winnLineLength; }
             set
             {
-                if(value < 1)
+                if(value == 0)
                 {
                     winnLineLength = 1;
                 }
@@ -25,22 +25,22 @@ namespace GridGamesConsole
                 }
             }
         }
-        public Player[] Players { get; private set; }
-        public Player CurrentPlayer { get; private set; }
-        public Player NextPlayer { get; private set; }
+        public Player<PlayerMarkerType>[] Players { get; private set; }
+        public Player<PlayerMarkerType> CurrentPlayer { get; private set; }
+        public Player<PlayerMarkerType> NextPlayer { get; private set; }
         private int currentPlayerIndex = 1;
 
-        public delegate void OutputGrid(char[] markerGrid, int gridWidth, int gridHeight, int? changedFieldIndex = null, char? changedFieldMarker = null);
+        public delegate void OutputGrid(PlayerMarkerType[] markerGrid, uint gridWidth, uint gridHeight, PlayerMarkerType changedFieldMarker, uint? changedFieldIndex = null);
         private OutputGrid outputGrid;
-        public delegate void DetectedWinnerHandler(Game sender, Player winner, int[] winningFields);
+        public delegate void DetectedWinnerHandler(Game<PlayerMarkerType> sender, Player<PlayerMarkerType> winner, uint[] winningFields);
         public event DetectedWinnerHandler DetectedWinner;
 
-        public Game(int width, int height, int _winnLineLength, Player[] players, Player emptyPlayer, OutputGrid _outputGrid, Grid.GridIsFullHandler gridIsFull)
+        public Game(uint width, uint height, uint _winnLineLength, Player<PlayerMarkerType>[] players, Player<PlayerMarkerType> emptyPlayer, OutputGrid _outputGrid, Grid.GridIsFullHandler gridIsFull)
         {
             grid = new Grid(width, height, emptyPlayer.GridId);
             WinnLineLength = _winnLineLength;
             
-            Players = new Player[players.Length + 1];
+            Players = new Player<PlayerMarkerType>[players.Length + 1];
             Players[0] = emptyPlayer;
             for(int i = 1; i < Players.Length; i++)
             {
@@ -54,12 +54,13 @@ namespace GridGamesConsole
             grid.GridIsFullEvent += gridIsFull;
         }
 
-        private void GridChangedDebug(Grid senderGrid, int fieldIndex)
+        //printsout all possible lines of the changed fieldIndex
+        private void GridChangedDebug(Grid senderGrid, uint fieldIndex)
         {
-            List<int>[] lanes = senderGrid.GetAllLanes(fieldIndex);
+            List<uint>[] lanes = senderGrid.GetAllLanes(fieldIndex);
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("Lanes: ");
-            foreach(List<int> lane in lanes)
+            foreach(List<uint> lane in lanes)
             {
                 foreach(int item in lane)
                 {
@@ -72,21 +73,22 @@ namespace GridGamesConsole
             Console.ReadKey();
         }
         
-        private void GridFieldChanged(Grid senderGrid, int fieldIndex)
+        //Checks for winner
+        private void GridFieldChanged(Grid senderGrid, uint fieldIndex)
         {
             DoGridOutput(fieldIndex);
-            List<int>[] lanes = senderGrid.GetAllLanes(fieldIndex);
+            List<uint>[] lanes = senderGrid.GetAllLanes(fieldIndex);
             
-            foreach(List<int> lane in lanes)
+            foreach(List<uint> lane in lanes)
             {
                 if (lane.Count < WinnLineLength)
                     continue;
-                int currenntIndex = 0;
-                int[] winningFields = new int[WinnLineLength];
-                Player winner;
-                foreach(int gridIndex in lane)
+                uint currenntIndex = 0;
+                uint[] winningFields = new uint[WinnLineLength];
+                Player<PlayerMarkerType> winner;
+                foreach(uint gridIndex in lane)
                 {
-                    winner = Player.GetPlayerByGridId(Players, grid[gridIndex]);
+                    winner = Player<PlayerMarkerType>.GetPlayerByGridId(Players, grid[gridIndex]);
                     if (winningFields[currenntIndex] == grid[gridIndex] && grid[gridIndex] != grid.DefaultFieldValue)
                     {
                         currenntIndex++;
@@ -100,7 +102,7 @@ namespace GridGamesConsole
                     else
                     {
                         currenntIndex = 0;
-                        winningFields = new int[WinnLineLength];
+                        winningFields = new uint[WinnLineLength];
                         winningFields[currenntIndex] = grid[gridIndex];
 
                         if (winningFields[currenntIndex] != grid.DefaultFieldValue && currenntIndex + 1 >= WinnLineLength)
@@ -113,25 +115,27 @@ namespace GridGamesConsole
             }
         }
 
-        private char[] GetConvertedGridArray()
+        //Convertes byte GridArray into a MarkerArray(char)
+        private PlayerMarkerType[] GetConvertedGridArray()
         {
-            char[] convertedGridArray = new char[grid.GridArray.Length];
+            PlayerMarkerType[] convertedGridArray = new PlayerMarkerType[grid.GridArray.Length];
             for(int i = 0; i < grid.GridArray.Length; i++)
             {
-                convertedGridArray[i] = Player.GetPlayerByGridId(Players, grid.GridArray[i]).Marker;
+                convertedGridArray[i] = Player<PlayerMarkerType>.GetPlayerByGridId(Players, grid.GridArray[i]).Marker;
             }
             return convertedGridArray;
         }
 
-        public void DoGridOutput(int? changedFieldIndex = null)
+        //starts the outputGrid (Method/delegate)
+        public void DoGridOutput(uint? changedFieldIndex = null)
         {
-            char? changedFieldMarker = null;
+            PlayerMarkerType changedFieldMarker = new Player<PlayerMarkerType>().Marker;
             if(changedFieldIndex != null)
             {
-                changedFieldMarker = Player.GetPlayerByGridId(Players, changedFieldIndex ?? Players[0].GridId).Marker;
+                changedFieldMarker = Player<PlayerMarkerType>.GetPlayerByGridId(Players, changedFieldIndex ?? Players[0].GridId).Marker;
             }
 
-            outputGrid(GetConvertedGridArray(), grid.Width, grid.Height, changedFieldIndex, changedFieldMarker);
+            outputGrid(GetConvertedGridArray(), grid.Width, grid.Height, changedFieldMarker, changedFieldIndex);
         }
 
         public void ResetGame()
@@ -141,15 +145,15 @@ namespace GridGamesConsole
             NextPlayer = Players[currentPlayerIndex];
             DoGridOutput();
         }
-        
-        public bool SetNextField(int fieldIndex)
+
+        //Tics the next field (for the currentPlayer) if Field is already taken by another Player the Method returns false (if Field was not taken true)
+        public bool SetNextField(uint fieldIndex)
         {
             CurrentPlayer = Players[currentPlayerIndex];
 
             if (fieldIndex >= grid.GridArray.Length || fieldIndex < 0 || grid[fieldIndex] != grid.DefaultFieldValue)
                 return false;
 
-            //Next Player has to be dertimined that it is updated when the gridChanged Event gets called
             if (currentPlayerIndex >= Players.Length - 1)
             {
                 currentPlayerIndex = 1;
